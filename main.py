@@ -1,16 +1,21 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, Depends
 from sqlalchemy import create_engine, Column, Integer, String 
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from pydantic import BaseModel
 
+load_dotenv()
 # 1. Настройка подключения к PostgreSQL в Docker
 # Формат: postgresql://user:password@host:port/database
-DB_URL = "postgresql://postgres:postgres@127.0.0.1:5432/dev_db"
+DB_URL = os.getenv("DB_URL", "postgres://postgres:postgres@127.0.0.1:5432/dev_db")
 
+# 2. Настройка подключения к PostgreSQL
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# 2. Описание модели таблицы (Using SQLAlchemy ORM)
+# 3. Описание модели таблицы (Using SQLAlchemy ORM)
 class Item(Base):
     __tablename__ = "items"
 
@@ -20,7 +25,17 @@ class Item(Base):
 # Автоматически создаем таблицу в БД при запуске 
 Base.metadata.create_all(bind=engine)
 
-# 3. Инициализация приложения FastAPI
+class ItemCreate(BaseModel):
+    title:str
+
+class ItemResponse(BaseModel):
+    id:int
+    title:str
+
+    class Config:
+        from_attributes = True
+
+# 4. Инициализация приложения FastAPI
 app=FastAPI(title="My first Backend API")
 
 # Вспомогательная функция для получения сессии базы данных
@@ -36,14 +51,13 @@ def get_db():
 def read_root():
     return {"message":"Бэкэнд успешно работает и подключен к PostgreSQL!"}
 
-@app.post("/items/")
-def create_item(title:str, db: Session = Depends(get_db)):
-    """ Создание новой записи в базе данных через POST запрос """
-    db_item = Item(title=title)
+@app.post("/items/", response_model=ItemResponse)
+def create_item(item: ItemCreate, db: Session = Depends(get_db)):
+    db_item = Item(title = item.title)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
-    return {"status":"success", "item":{"id": db_item.id, "title":db_item.title}}
+    return db_item
 
 @app.get("/items/")
 def read_items(db: Session = Depends(get_db)):
