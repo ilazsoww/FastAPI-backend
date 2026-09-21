@@ -65,6 +65,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "psycopg2-binary" },
+    { name = "python-dotenv" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -73,6 +74,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
+    { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "sqlalchemy", specifier = ">=2.0.52" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.4" },
 ]
